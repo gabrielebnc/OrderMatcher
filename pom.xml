@@ -19,4 +19,12 @@
         <module>OrderClient</module>
         <module>OrderMatcherServer</module>
     </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>net.openhft</groupId>
+            <artifactId>chronicle-queue</artifactId>
+            <version>5.26ea2</version>
+        </dependency>
+    </dependencies>
 </project>
