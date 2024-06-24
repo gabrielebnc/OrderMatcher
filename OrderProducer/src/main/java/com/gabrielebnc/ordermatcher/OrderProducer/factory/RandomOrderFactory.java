@@ -1,8 +1,7 @@
-package com.gabrielebnc.ordermatcher.OrderClient.factory;
+package com.gabrielebnc.ordermatcher.OrderProducer.factory;
 
-import com.gabrielebnc.ordermatcher.OrderClient.model.Order;
+import com.gabrielebnc.ordermatcher.OrderProducer.model.Order;
 
-import java.time.Instant;
 import java.util.Random;
 
 public class RandomOrderFactory implements OrderFactory{

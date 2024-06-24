@@ -1,6 +1,6 @@
-package com.gabrielebnc.ordermatcher.OrderClient;
+package com.gabrielebnc.ordermatcher.OrderProducer;
 
-public class OrderClient {
+public class OrderProducer {
 
     /**
      *  The OrderClient, representing a single client making buy/sell orders

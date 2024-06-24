@@ -1,4 +1,4 @@
-package com.gabrielebnc.ordermatcher.OrderClient.model;
+package com.gabrielebnc.ordermatcher.OrderProducer.model;
 
 import java.time.Instant;
 
