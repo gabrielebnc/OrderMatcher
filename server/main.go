@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt";
+	"fmt"
+
 	"github.com/gabrielebnc/OrderMatcher/core/transport"
 )
 
 func main() {
 
-	tcp_configs := transport.NewTCPTransportConfigs("3000")
+	tcp_configs := transport.NewTCPTransportConfigs(":3000")
 
-	tcp_transport := transport.NewTCPTransport(tcp_configs)
+	server := transport.NewTCPTransport(tcp_configs)
 
-	tcp_transport.Test()
+	server.Start()
 	fmt.Println("ok server")
 }
