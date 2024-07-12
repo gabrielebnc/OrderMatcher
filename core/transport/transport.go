@@ -72,7 +72,7 @@ func (tcpt *TCPTransport) acceptLoop() {
 		}
 
 		tcpt.connsmap[conn.RemoteAddr().String()] = conn
-		fmt.Println("Incoming Connection:", conn)
+		fmt.Println("Accepted Conn:", conn.RemoteAddr().String())
 
 		go tcpt.readLoop(conn)
 	}
@@ -93,7 +93,6 @@ func (tcpt *TCPTransport) readLoop(conn net.Conn) {
 				return
 			default:
 				continue
-
 			}
 		}
 		msg := buf[:n]
@@ -103,7 +102,6 @@ func (tcpt *TCPTransport) readLoop(conn net.Conn) {
 			payload: buf[:n],
 		}
 
-		fmt.Println("UPSTANDING CONNS:", tcpt.connsmap)
 		fmt.Println("MSG FROM:", conn)
 		fmt.Println("MSG:", string(msg))
 	}
