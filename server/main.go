@@ -12,6 +12,12 @@ func main() {
 
 	server := transport.NewTCPTransport(tcp_configs)
 
+	go func() {
+		for msg := range server.Msgch {
+			fmt.Printf("msg from %v: %v\n", msg.From(), string(msg.Payload()))
+		}
+	}()
+
 	server.Start()
-	fmt.Println("ok server")
+
 }

@@ -18,6 +18,14 @@ type Message struct {
 	payload []byte
 }
 
+func (msg *Message) From() string {
+	return msg.from
+}
+
+func (msg *Message) Payload() []byte {
+	return msg.payload
+}
+
 type TCPTransportConfigs struct {
 	listenAddr string
 	//port       string
@@ -27,23 +35,23 @@ type TCPTransport struct {
 	configs  TCPTransportConfigs
 	ln       net.Listener
 	quitch   chan struct{}
-	msgch    chan Message
-	connsmap map[string]net.Conn
-}
-
-func NewTCPTransport(configs TCPTransportConfigs) *TCPTransport {
-	return &TCPTransport{
-		configs:  configs,
-		quitch:   make(chan struct{}),
-		msgch:    make(chan Message, 2048), // TODO should it be buffered or unbuffered? investigate
-		connsmap: make(map[string]net.Conn),
-	}
+	Msgch    chan Message
+	connsmap map[string]net.Conn // TODO concurrency safety?
 }
 
 func NewTCPTransportConfigs(listenAddr string) TCPTransportConfigs {
 	return TCPTransportConfigs{
 		listenAddr: listenAddr,
 		//port:       port,
+	}
+}
+
+func NewTCPTransport(configs TCPTransportConfigs) *TCPTransport {
+	return &TCPTransport{
+		configs:  configs,
+		quitch:   make(chan struct{}),
+		Msgch:    make(chan Message, 2048), // TODO should it be buffered or unbuffered? investigate
+		connsmap: make(map[string]net.Conn),
 	}
 }
 
@@ -58,7 +66,7 @@ func (tcpt *TCPTransport) Start() error {
 	go tcpt.acceptLoop()
 
 	<-tcpt.quitch
-	close(tcpt.msgch)
+	close(tcpt.Msgch)
 
 	return nil
 }
@@ -96,15 +104,23 @@ func (tcpt *TCPTransport) readLoop(conn net.Conn) {
 
 			}
 		}
-		msg := buf[:n]
 
-		tcpt.msgch <- Message{
+		tcpt.Msgch <- Message{
 			from:    conn.RemoteAddr().String(),
 			payload: buf[:n],
 		}
-
-		fmt.Println("UPSTANDING CONNS:", tcpt.connsmap)
-		fmt.Println("MSG FROM:", conn)
-		fmt.Println("MSG:", string(msg))
 	}
+}
+
+func (tcpt *TCPTransport) Dial(address string) {
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		fmt.Println("ERROR (DIAL):", err)
+	}
+	tcpt.connsmap[address] = conn //what if there's already a connection ?
+}
+
+func (tcpt *TCPTransport) CloseConnection(address string) {
+	tcpt.connsmap[address].Close() //concurrency safety?
+	delete(tcpt.connsmap, address)
 }
