@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gabrielebnc/OrderMatcher/commons"
+	"github.com/gabrielebnc/OrderMatcher/commons/core"
 )
 
 type TCPClient struct {
 	dl     net.Dialer
 	quitch chan struct{}
-	msgch  chan commons.Message
+	msgch  chan core.Message
 
 	connsMapMu sync.RWMutex
 	connsMap   map[string]net.Conn

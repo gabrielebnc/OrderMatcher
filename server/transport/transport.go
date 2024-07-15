@@ -8,14 +8,13 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/gabrielebnc/OrderMatcher/commons"
+	"github.com/gabrielebnc/OrderMatcher/commons/core"
 )
 
-// sransport is responsible for:
+// TCPServer is responsible for:
 //  - Listen for incoming connections
-//  - Send request for creating connections
 //  - Accept incoming connections
-//  - Handle connections
+//  - Handle its connections
 //  - Send messages
 
 type TCPServerConfig struct {
@@ -26,7 +25,7 @@ type TCPServer struct {
 	configs TCPServerConfig
 	ln      net.Listener
 	quitch  chan struct{}
-	msgch   chan commons.Message
+	msgch   chan core.Message
 
 	connsMapMu sync.RWMutex
 	connsMap   map[string]net.Conn
@@ -42,7 +41,7 @@ func NewTCPServer(configs TCPServerConfig) *TCPServer {
 	return &TCPServer{
 		configs:  configs,
 		quitch:   make(chan struct{}),
-		msgch:    make(chan commons.Message), // TODO should it be buffered or unbuffered? investigate
+		msgch:    make(chan core.Message, 512), // TODO should it be buffered or unbuffered?
 		connsMap: make(map[string]net.Conn),
 	}
 }

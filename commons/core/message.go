@@ -1,4 +1,4 @@
-package commons
+package core
 
 type Message struct {
 	from    string
