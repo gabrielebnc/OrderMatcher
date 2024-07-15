@@ -15,7 +15,7 @@ func main() {
 	go func() {
 		for msg := range server.Consume() {
 			fmt.Printf("msg from %v: %v\n", msg.From(), string(msg.Payload()))
-			server.SendMessage(msg.From(), []byte("hello from server"))
+			server.SendMessage(msg.From(), []byte("ACK"))
 		}
 	}()
 

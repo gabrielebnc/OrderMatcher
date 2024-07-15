@@ -27,7 +27,7 @@ func NewTCPClient() *TCPClient {
 			Timeout: 10 * time.Second,
 		},
 		quitch:   make(chan struct{}),
-		msgch:    make(chan commons.Message),
+		msgch:    make(chan core.Message),
 		connsMap: make(map[string]net.Conn),
 	}
 }
@@ -83,12 +83,12 @@ func (c *TCPClient) readLoop(conn net.Conn) {
 				continue
 			}
 		}
-		c.msgch <- *commons.NewMessage(conn.RemoteAddr().String(), buf[:n])
+		c.msgch <- *core.NewMessage(conn.RemoteAddr().String(), buf[:n])
 		fmt.Printf("msg from %v: %v\n", conn.RemoteAddr().String(), buf[:n])
 	}
 }
 
-func (c *TCPClient) Consume() <-chan commons.Message {
+func (c *TCPClient) Consume() <-chan core.Message {
 	return c.msgch
 }
 

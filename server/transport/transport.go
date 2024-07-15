@@ -103,11 +103,11 @@ func (s *TCPServer) readLoop(conn net.Conn) {
 			}
 		}
 
-		s.msgch <- *commons.NewMessage(conn.RemoteAddr().String(), buf[:n])
+		s.msgch <- *core.NewMessage(conn.RemoteAddr().String(), buf[:n])
 	}
 }
 
-func (s *TCPServer) Consume() <-chan commons.Message {
+func (s *TCPServer) Consume() <-chan core.Message {
 	return s.msgch
 }
 
