@@ -15,6 +15,8 @@ func main() {
 	go func() {
 		for msg := range server.Msgch {
 			fmt.Printf("msg from %v: %v\n", msg.From(), string(msg.Payload()))
+
+			server.SendMessage(msg.From(), []byte("heyla"))
 		}
 	}()
 

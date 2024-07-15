@@ -1,9 +1,12 @@
 package transport
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
+	"reflect"
+	"sync"
 )
 
 // TCPTransport is responsible for:
@@ -28,21 +31,21 @@ func (msg *Message) Payload() []byte {
 
 type TCPTransportConfigs struct {
 	listenAddr string
-	//port       string
 }
 
 type TCPTransport struct {
-	configs  TCPTransportConfigs
-	ln       net.Listener
-	quitch   chan struct{}
-	Msgch    chan Message
-	connsmap map[string]net.Conn // TODO concurrency safety?
+	configs TCPTransportConfigs
+	ln      net.Listener
+	quitch  chan struct{}
+	Msgch   chan Message
+
+	connsmapMu sync.RWMutex
+	connsmap   map[string]net.Conn
 }
 
 func NewTCPTransportConfigs(listenAddr string) TCPTransportConfigs {
 	return TCPTransportConfigs{
 		listenAddr: listenAddr,
-		//port:       port,
 	}
 }
 
@@ -79,7 +82,7 @@ func (tcpt *TCPTransport) acceptLoop() {
 			continue
 		}
 
-		tcpt.connsmap[conn.RemoteAddr().String()] = conn
+		tcpt.addConnecton(conn.RemoteAddr().String(), conn)
 		fmt.Println("Accepted Conn:", conn.RemoteAddr().String())
 
 		go tcpt.readLoop(conn)
@@ -92,14 +95,22 @@ func (tcpt *TCPTransport) readLoop(conn net.Conn) {
 	for {
 		n, err := conn.Read(buf)
 		if err != nil {
-			fmt.Println("ERROR (READLOOP):", err.Error())
 
-			switch err {
-			case io.EOF:
-				delete(tcpt.connsmap, conn.RemoteAddr().String())
-				fmt.Println("Conn closed:", conn.RemoteAddr().String())
+			switch {
+			case errors.Is(err, io.EOF):
+				tcpt.removeConnecton(conn.RemoteAddr().String())
+				fmt.Println("Conn closed (EOF):", conn.RemoteAddr().String())
+				return
+			case errors.Is(err, net.ErrClosed):
+				tcpt.removeConnecton(conn.RemoteAddr().String())
+				fmt.Println("Conn closed (ErrClosed):", conn.RemoteAddr().String())
+				return
+			case errors.As(err, new(*net.OpError)):
+				tcpt.removeConnecton(conn.RemoteAddr().String())
+				fmt.Println("Conn closed (OpError):", conn.RemoteAddr().String())
 				return
 			default:
+				fmt.Println(reflect.TypeOf(err))
 				continue
 			}
 		}
@@ -111,15 +122,38 @@ func (tcpt *TCPTransport) readLoop(conn net.Conn) {
 	}
 }
 
+func (tcpt *TCPTransport) addConnecton(address string, conn net.Conn) {
+	tcpt.connsmapMu.Lock()
+	tcpt.connsmap[address] = conn
+	tcpt.connsmapMu.Unlock()
+}
+
+func (tcpt *TCPTransport) removeConnecton(address string) {
+	tcpt.connsmapMu.Lock()
+	delete(tcpt.connsmap, address)
+	tcpt.connsmapMu.Unlock()
+}
+
+func (tcpt *TCPTransport) CloseConnection(address string) {
+	tcpt.connsmap[address].Close() //concurrency safety?
+	tcpt.removeConnecton(address)
+}
+
 func (tcpt *TCPTransport) Dial(address string) {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		fmt.Println("ERROR (DIAL):", err)
 	}
-	tcpt.connsmap[address] = conn //what if there's already a connection ?
+	tcpt.addConnecton(address, conn) //what if there's already a connection ?
 }
 
-func (tcpt *TCPTransport) CloseConnection(address string) {
-	tcpt.connsmap[address].Close() //concurrency safety?
-	delete(tcpt.connsmap, address)
+func (tcpt *TCPTransport) SendMessage(address string, message []byte) {
+	fmt.Println(tcpt.connsmap)
+	conn, ok := tcpt.connsmap[address]
+	if ok {
+		fmt.Println("Sending message to", address)
+		conn.Write(message)
+	} else {
+		fmt.Printf("ERROR (SEND): %s is not connected\n", address)
+	}
 }
