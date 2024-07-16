@@ -1,15 +1,15 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/gabrielebnc/OrderMatcher/client/transport"
+	"github.com/gabrielebnc/OrderMatcher/commons"
 )
 
-func randomOrder(traderId string) *Order {
+func randomOrder(traderId string) *commons.Order {
 
 	var tId [32]rune
 	var orderType rune
@@ -36,14 +36,14 @@ func randomOrder(traderId string) *Order {
 		tId[i] = char
 	}
 
-	return &Order{
+	return &commons.Order{
 		TraderId:  tId,
 		OrderType: orderType,
 		Side:      side,
 		Symbol:    symbol,
 		Quantity:  int16(rand.Int()),
 		Price:     rand.Int31(),
-		OrderTime: time.Now(),
+		OrderTime: time.Now().Unix(),
 	}
 }
 
@@ -64,13 +64,9 @@ func main() {
 	fmt.Println(randomOrder(traderId))
 
 	for i := 0; i < 12; i++ {
-		data, err := json.Marshal(*randomOrder(traderId))
+		serializedOrder := (*randomOrder(traderId)).Serialize()
 
-		if err != nil {
-			continue
-		}
-
-		client.SendMessage(serverAddr, data)
+		client.SendMessage(serverAddr, serializedOrder)
 	}
 
 	client.CloseConnection(serverAddr)
